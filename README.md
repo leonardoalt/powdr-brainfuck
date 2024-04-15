@@ -13,7 +13,7 @@ different from approach (2) which implements an ISA that Brainfuck programs can
 be transpiled to.
 
 ```console
-powdr pil brainfuck.asm -o output -f -i "3,62,44,0,17"
+powdr pil brainfuck_vm.asm -o output -f -i "3,62,44,0,17"
 ```
 
 This command compiles the interpreter and generates a witness for the program
