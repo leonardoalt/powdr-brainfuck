@@ -25,7 +25,6 @@ proof of the execution, or `--prove-with halo2 --field bn254` to generate a
 SNARK.
 
 TODO:
-- Support Brainfuck loops
 - Verify public program commitment
 
 ## 2. Brainfuck ISA and Compiler

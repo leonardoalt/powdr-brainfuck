@@ -24,6 +24,10 @@ use std::memory::Memory;
 machine Brainfuck {
 	Memory mem;
 
+	// We assume the Brainfuck program will run in less than 100_000 rows.
+	// This can be increased if needed.
+	degree 100000;
+
 	reg pc[@pc];
 	reg X[<=];
 	reg Y[<=];
@@ -37,6 +41,8 @@ machine Brainfuck {
 	reg dp;
 	// program's input counter
 	reg in_ptr;
+	// the stack of loop addresses
+	reg loop_sp;
 
 	// General purpose registers
 	reg ret_addr;
@@ -87,8 +93,6 @@ machine Brainfuck {
 			A <== jump_dyn(ret_addr);
 
 		run_op:
-			// TODO loops
-
 			// '>' is 62
 			branch_if_zero op - 62, routine_move_right;
 			// '<' is 60
@@ -101,8 +105,58 @@ machine Brainfuck {
 			branch_if_zero op - 44, routine_read;
 			// '.' is 46
 			branch_if_zero op - 46, routine_write;
+			// '[' is 91
+			branch_if_zero op - 91, routine_loop_start;
+			// ']' is 93
+			branch_if_zero op - 93, routine_loop_end;
 			// unknown op
 			fail;
+
+		routine_loop_start:
+			A <== mload(dp);
+			// If the current cell is zero, find the matching ']' and set b_op
+			// to after that.
+			branch_if_zero A, loop_exit;
+		loop_enter:
+			// We're entering the loop: save the loop start pc.
+			loop_sp <=X= loop_sp + 1;
+			mstore loop_sp, b_pc;
+			A <== jump(end_run_op);
+		loop_exit:
+			// Scope counter, needed to exit nested loops.
+			CNT <=X= 1;
+			A <=X= b_pc;
+		search_for_loop_end:
+			A <=X= A + 1;
+			op <== mload(A);
+			branch_if_zero op - 91, found_loop_enter;
+			branch_if_zero op - 93, found_loop_exit;
+			tmp1 <== jump(search_for_loop_end);
+		found_loop_enter:
+			// If we see a nested opening loop we increase the counter.
+			CNT <=X= CNT + 1;
+			tmp1 <== jump(search_for_loop_end);
+		found_loop_exit:
+			// If we see a closing loop and the counter is zero, we found the
+			// matching loop.
+			CNT <=X= CNT - 1;
+			branch_if_zero CNT, exit_loop;
+			tmp1 <== jump(search_for_loop_end);
+		exit_loop:
+			// We set the pc to the closing loop because the main interpreter
+			// loop always increments it by 1 by default.
+			b_pc <=X= A;
+			A <== jump(end_run_op);
+
+		routine_loop_end:
+			// When we see a `]`, we need to jump back to the start of the
+			// loop.
+			// We set `b_pc` to before the start of the loop because the
+			// main interpreter loop always increments it by 1 by default.
+			b_pc <== mload(loop_sp);
+			b_pc <=X= b_pc - 1;
+			loop_sp <=X= loop_sp - 1;
+			A <== jump(end_run_op);
 
 		routine_move_right:
 			dp <=X= dp + 1;
@@ -140,6 +194,7 @@ machine Brainfuck {
 			b_pc <=X= 0 /*PROGRAM_START*/;
 			in_ptr <=X= 1024 /*INPUT_START*/;
 			dp <=X= 2048 /*MEM_START*/;
+			loop_sp <=X= 4096 /*LOOP_STACK_START*/;
 
 		interpreter_loop:
 			// TODO we should also hash the program and expose as public
@@ -147,8 +202,8 @@ machine Brainfuck {
 
 			branch_if_zero op, exit;
 
-			b_pc <=X= b_pc + 1;
 			ret_addr <== jump(run_op);
+			b_pc <=X= b_pc + 1;
 
 			A <== jump(interpreter_loop);
 	}
