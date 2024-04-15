@@ -65,11 +65,14 @@ machine Brainfuck {
 
 	// === brainfuck interpreter ==========
 	function main {
+		// calls the main entry point of the program
 		ret_addr <== jump(__runtime_start);
 
+		// exits entire program
 		exit:
 			return;
 
+		// ==== helper routine to read the program and inputs from prover into memory
 		read_program_and_input:
 			// read the length of the program
 			A <=X= ${ std::prover::Query::Input(0) };
@@ -91,7 +94,9 @@ machine Brainfuck {
 			tmp1 <== jump(read_input_loop);
 		end_read_input:
 			A <== jump_dyn(ret_addr);
+		// ==== end of helper routine
 
+		// ==== helper routine that decodes and runs an opcode
 		run_op:
 			// '>' is 62
 			branch_if_zero op - 62, routine_move_right;
@@ -112,6 +117,7 @@ machine Brainfuck {
 			// unknown op
 			fail;
 
+		// ==== helper routine for `[`
 		routine_loop_start:
 			A <== mload(dp);
 			// If the current cell is zero, find the matching ']' and set b_op
@@ -147,7 +153,9 @@ machine Brainfuck {
 			// loop always increments it by 1 by default.
 			b_pc <=X= A;
 			A <== jump(end_run_op);
+		// ==== end of `[` helper routine
 
+		// ==== helper routine for `]`
 		routine_loop_end:
 			// When we see a `]`, we need to jump back to the start of the
 			// loop.
@@ -157,38 +165,53 @@ machine Brainfuck {
 			b_pc <=X= b_pc - 1;
 			loop_sp <=X= loop_sp - 1;
 			A <== jump(end_run_op);
+		// ==== end of `]` helper routine
 
+		// ==== helper routine for `>`
 		routine_move_right:
 			dp <=X= dp + 1;
 			A <== jump(end_run_op);
+		// ==== end of `>` helper routine
 
+		// ==== helper routine for `<`
 		routine_move_left:
 			dp <=X= dp - 1;
 			A <== jump(end_run_op);
+		// ==== end of `<` helper routine
 
+		// ==== helper routine for `+`
 		routine_inc:
 			A <== mload(dp);
 			mstore dp, A + 1;
 			A <== jump(end_run_op);
+		// ==== end of `+` helper routine
 
+		// ==== helper routine for `-`
 		routine_dec:
 			A <== mload(dp);
 			mstore dp, A - 1;
 			A <== jump(end_run_op);
+		// ==== end of `-` helper routine
 
+		// ==== helper routine for `,`
 		routine_read:
 			A <== mload(in_ptr);
 			mstore dp, A;
 			A <== jump(end_run_op);
+		// ==== end of `,` helper routine
 
+		// ==== helper routine for `.`
 		routine_write:
 			A <== mload(dp);
 			A <=X= ${ std::prover::Query::PrintChar(std::convert::int(std::prover::eval(A))) };
 			A <== jump(end_run_op);
+		// ==== end of `.` helper routine
 
 		end_run_op:
 			A <== jump_dyn(ret_addr);
+		// ==== end of opcode helper routine
 
+		// ==== program entry point
 		__runtime_start:
 			ret_addr <== jump(read_program_and_input);
 			b_pc <=X= 0 /*PROGRAM_START*/;
@@ -196,6 +219,7 @@ machine Brainfuck {
 			dp <=X= 2048 /*MEM_START*/;
 			loop_sp <=X= 4096 /*LOOP_STACK_START*/;
 
+		// ==== main interpreter loop
 		interpreter_loop:
 			// TODO we should also hash the program and expose as public
 			op <== mload(b_pc);
@@ -206,5 +230,6 @@ machine Brainfuck {
 			b_pc <=X= b_pc + 1;
 
 			A <== jump(interpreter_loop);
+		// ==== end of main interpreter loop
 	}
 }
