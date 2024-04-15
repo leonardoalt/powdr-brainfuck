@@ -3,11 +3,14 @@
 This repository contains different Brainfuck implementations as
 [powdr](https://docs.powdr.org/) VMs.
 
-## Assembly Interpreter
+## 1. Brainfuck VM in powdr-IR
 
-`brainfuck.asm` is a hand-written assembly interpreter that takes the Brainfuck
-program (with a zero at the end) and the program inputs as a single list of
-numbers encoded as `<program length> <program> <input>`.
+`brainfuck_vm.asm` is a hand-written assembly interpreter that takes the
+Brainfuck program (with a zero at the end) and the program inputs as a single
+list of numbers encoded as `<program length> <program> <input length> <input>`
+and generates a ZK proof of execution, effectively being a zkVM. This is
+different from approach (2) which implements an ISA that Brainfuck programs can
+be transpiled to.
 
 ```console
 powdr pil brainfuck.asm -o output -f -i "3,62,44,0,17"
@@ -22,13 +25,13 @@ proof of the execution, or `--prove-with halo2 --field bn254` to generate a
 SNARK.
 
 TODO:
-- Support brainfuck loops
+- Support Brainfuck loops
 - Verify public program commitment
 
-## Brainfuck VM in powdr-IR
+## 2. Brainfuck ISA and Compiler
 
 TODO
 
-## Brainfuck VM in powdr-Rust
+## 3. Brainfuck VM in powdr-Rust
 
 TODO

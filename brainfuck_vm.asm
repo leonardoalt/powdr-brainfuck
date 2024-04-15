@@ -1,24 +1,25 @@
-use std::memory::Memory;
-
 /// The machine below implements a basic Brainfuck interpreter.
 /// It abuses many registers for a clearer understanding of the code,
 /// but it can be optimized quite a bit, by for example:
 /// - Re-using registers or moving them to memory
-/// - Reading the code and inputs from the prover to memory initially
 /// - Re-writing some routines to use fewer rows
 
 /// Soundness considerations:
 /// - The opcodes are currently unconstrained, meaning the prover can provide whatever they want.
-///	  To fix this, a public commitment to the program needs to be passed and verified in the machine below.
+///   To fix this, a public commitment to the program needs to be passed and verified in the machine below.
 
-/// Program and input encoding:
+/// Program and input/output encoding:
 /// The prover input is a list of numbers encoded as follows
-/// <program_length> <program> <input>
+/// <program_length> <program> <input_length> <input>
 /// where <program> needs to end with a 0
 /// Example:
-/// [2, 44, 0, 1]
+/// [2, 44, 0, 1, 97]
 /// This program has length 2, where the program is [44, 0] (read, finish)
-/// The input list is [1]
+/// and the input list is [97].
+/// The `.` (print) instruction treats its input as the ASCII code of a character,
+/// and prints that character.
+
+use std::memory::Memory;
 
 machine Brainfuck {
 	Memory mem;
@@ -40,6 +41,8 @@ machine Brainfuck {
 	// General purpose registers
 	reg ret_addr;
 	reg A;
+	reg CNT;
+	reg tmp1;
 
 	instr jump l: label -> Y { pc' = l, Y = pc + 1}
 	instr jump_dyn X -> Y { pc' = X, Y = pc + 1}
@@ -61,6 +64,28 @@ machine Brainfuck {
 		exit:
 			return;
 
+		read_program_and_input:
+			// read the length of the program
+			A <=X= ${ std::prover::Query::Input(0) };
+			CNT <=X= 0;
+		read_program_loop:
+			branch_if_zero A - CNT, end_read_program;
+			mstore CNT + 0 /*PROGRAM_START*/, ${ std::prover::Query::Input(std::convert::int(std::prover::eval(CNT)) + 1) };
+			CNT <=X= CNT + 1;
+			tmp1 <== jump(read_program_loop);
+		end_read_program:
+		read_input:
+			CNT <=X= 0;
+			// read input length
+			in_ptr <=X= ${ std::prover::Query::Input(std::convert::int(std::prover::eval(A)) + 1) };
+		read_input_loop:
+			branch_if_zero in_ptr - CNT, end_read_input;
+			mstore CNT + 1024 /*INPUT_START*/, ${ std::prover::Query::Input(std::convert::int(std::prover::eval(CNT) + std::prover::eval(A)) + 2) };
+			CNT <=X= CNT + 1;
+			tmp1 <== jump(read_input_loop);
+		end_read_input:
+			A <== jump_dyn(ret_addr);
+
 		run_op:
 			// TODO loops
 
@@ -80,15 +105,11 @@ machine Brainfuck {
 			fail;
 
 		routine_move_right:
-			// This is needed because powdr's memory witgen requires 4-aligned addresses.
-			// TODO replace by `dp <=X= dp + 1;` when PR 1271 is merged.
-			dp <=X= dp + 4;
+			dp <=X= dp + 1;
 			A <== jump(end_run_op);
 
 		routine_move_left:
-			// This is needed because powdr's memory witgen requires 4-aligned addresses.
-			// TODO replace by `dp <=X= dp + 1;` when PR 1271 is merged.
-			dp <=X= dp - 4;
+			dp <=X= dp - 1;
 			A <== jump(end_run_op);
 
 		routine_inc:
@@ -102,29 +123,27 @@ machine Brainfuck {
 			A <== jump(end_run_op);
 
 		routine_read:
-			A <=X= ${ std::prover::Query::Input(std::convert::int(std::prover::eval(in_ptr))) };
-			in_ptr <=X= in_ptr + 1;
+			A <== mload(in_ptr);
 			mstore dp, A;
 			A <== jump(end_run_op);
 
 		routine_write:
 			A <== mload(dp);
-			A <=X= ${ std::prover::Query::PrintChar(std::convert::int(std::prover::eval(dp))) };
+			A <=X= ${ std::prover::Query::PrintChar(std::convert::int(std::prover::eval(A))) };
 			A <== jump(end_run_op);
 
 		end_run_op:
 			A <== jump_dyn(ret_addr);
 
 		__runtime_start:
-			A <=X= ${ std::prover::Query::Input(0) };
-			in_ptr <=X= A + 1;
-			b_pc <=X= 1;
-			dp <=X= 40;
+			ret_addr <== jump(read_program_and_input);
+			b_pc <=X= 0 /*PROGRAM_START*/;
+			in_ptr <=X= 1024 /*INPUT_START*/;
+			dp <=X= 2048 /*MEM_START*/;
 
 		interpreter_loop:
-			// TODO this can be optimized by reading the whole program at once to memory
 			// TODO we should also hash the program and expose as public
-			op <=X= ${ std::prover::Query::Input(std::convert::int(std::prover::eval(b_pc))) };
+			op <== mload(b_pc);
 
 			branch_if_zero op, exit;
 
