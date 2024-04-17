@@ -27,7 +27,9 @@ machine Brainfuck {
 	// This is a hard upper bound for the trace length of the proven programs.
 	// We assume the Brainfuck program will run in less than 2**18 rows.
 	// It can be increased if needed.
-	degree 2**18;
+	// The main lower bound consideration is the memory machine:
+	// The addresses set in __runtime_start cannot be larger than the degree below.
+	degree 2**16;
 
 	reg pc[@pc];
 	reg X[<=];
@@ -64,7 +66,7 @@ machine Brainfuck {
 	// ============== iszero check for X =======================
 	let XIsZero = std::utils::is_zero(X);
 
-	// === brainfuck interpreter ==========
+	// === Brainfuck interpreter ==========
 	function main {
 		// calls the main entry point of the program
 		ret_addr <== jump(__runtime_start);
@@ -90,7 +92,7 @@ machine Brainfuck {
 			in_ptr <=X= ${ std::prover::Query::Input(std::convert::int(std::prover::eval(A)) + 1) };
 		read_input_loop:
 			branch_if_zero in_ptr - CNT, end_read_input;
-			mstore CNT + 1024 /*INPUT_START*/, ${ std::prover::Query::Input(std::convert::int(std::prover::eval(CNT) + std::prover::eval(A)) + 2) };
+			mstore CNT + 10000 /*INPUT_START*/, ${ std::prover::Query::Input(std::convert::int(std::prover::eval(CNT) + std::prover::eval(A)) + 2) };
 			CNT <=X= CNT + 1;
 			tmp1 <== jump(read_input_loop);
 		end_read_input:
@@ -219,9 +221,9 @@ machine Brainfuck {
 			// Arbitrary sizes for the memory regions
 			// The main part is memory (dp)
 			b_pc <=X= 0 /*PROGRAM_START*/;
-			in_ptr <=X= 30000 /*INPUT_START*/;
-			loop_sp <=X= 60000 /*LOOP_STACK_START*/;
-			dp <=X= 90000 /*MEM_START*/;
+			in_ptr <=X= 10000 /*INPUT_START*/;
+			loop_sp <=X= 20000 /*LOOP_STACK_START*/;
+			dp <=X= 30000 /*MEM_START*/;
 
 		// ==== main interpreter loop
 		interpreter_loop:
