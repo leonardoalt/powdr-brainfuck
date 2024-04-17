@@ -24,9 +24,10 @@ use std::memory::Memory;
 machine Brainfuck {
 	Memory mem;
 
-	// We assume the Brainfuck program will run in less than 100_000 rows.
-	// This can be increased if needed.
-	degree 100000;
+	// This is a hard upper bound for the trace length of the proven programs.
+	// We assume the Brainfuck program will run in less than 2**18 rows.
+	// It can be increased if needed.
+	degree 2**18;
 
 	reg pc[@pc];
 	reg X[<=];
@@ -214,10 +215,13 @@ machine Brainfuck {
 		// ==== program entry point
 		__runtime_start:
 			ret_addr <== jump(read_program_and_input);
+
+			// Arbitrary sizes for the memory regions
+			// The main part is memory (dp)
 			b_pc <=X= 0 /*PROGRAM_START*/;
-			in_ptr <=X= 1024 /*INPUT_START*/;
-			dp <=X= 2048 /*MEM_START*/;
-			loop_sp <=X= 4096 /*LOOP_STACK_START*/;
+			in_ptr <=X= 30000 /*INPUT_START*/;
+			loop_sp <=X= 60000 /*LOOP_STACK_START*/;
+			dp <=X= 90000 /*MEM_START*/;
 
 		// ==== main interpreter loop
 		interpreter_loop:

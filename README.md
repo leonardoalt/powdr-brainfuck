@@ -24,6 +24,15 @@ You can add `--prove-with estark` to the command above to generate a STARK
 proof of the execution, or `--prove-with halo2 --field bn254` to generate a
 SNARK.
 
+The script `program_formatter.py` helps to format Brainfuck programs as `powdr` inputs:
+
+```console
+powdr pil brainfuck_vm.asm -i $(./program_formatter.py hello_world.bf) -o output -f
+```
+
+`Hello World!` should be printed during witness generation.
+
+
 TODO:
 - Verify public program commitment
 
