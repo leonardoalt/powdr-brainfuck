@@ -1,0 +1,16 @@
+[package]
+name = "brainfuck-powdr-host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+powdr = { git = "https://github.com/powdr-labs/powdr", branch = "main", features = ["halo2", "estark-polygon"]}
+
+brainfuck-interpreter = { path = "../interpreter", default-features = false, features = ["std"] }
+
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
+serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }
+
+env_logger = "0.10.2"
+clap = { version = "^4.4", features = ["derive"] }
+log = "0.4.17"

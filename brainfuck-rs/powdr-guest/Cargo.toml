@@ -1,0 +1,12 @@
+[package]
+name = "brainfuck-powdr-guest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+brainfuck-interpreter = { path = "../interpreter", default-features = false }
+powdr-riscv-runtime = { git = "https://github.com/powdr-labs/powdr", branch = "main" }
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
+serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }
+
+[workspace]
