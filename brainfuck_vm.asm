@@ -19,17 +19,15 @@
 /// The `.` (print) instruction treats its input as the ASCII code of a character,
 /// and prints that character.
 
-use std::memory::Memory;
+use std::machines::memory::Memory;
 
-machine Brainfuck {
+// This is a hard upper bound for the trace length of the proven programs.
+// We assume the Brainfuck program will run in less than 2**18 rows.
+// It can be increased if needed.
+// The main lower bound consideration is the memory machine:
+// The addresses set in __runtime_start cannot be larger than the degree below.
+machine Brainfuck with degree: 2**16 {
 	Memory mem;
-
-	// This is a hard upper bound for the trace length of the proven programs.
-	// We assume the Brainfuck program will run in less than 2**18 rows.
-	// It can be increased if needed.
-	// The main lower bound consideration is the memory machine:
-	// The addresses set in __runtime_start cannot be larger than the degree below.
-	degree 2**16;
 
 	reg pc[@pc];
 	reg X[<=];
@@ -206,7 +204,7 @@ machine Brainfuck {
 		// ==== helper routine for `.`
 		routine_write:
 			A <== mload(dp);
-			A <=X= ${ std::prover::Query::PrintChar(std::convert::int(std::prover::eval(A))) };
+			A <=X= ${ std::prover::Query::Output(1, std::convert::int(std::prover::eval(A))) };
 			A <== jump(end_run_op);
 		// ==== end of `.` helper routine
 
