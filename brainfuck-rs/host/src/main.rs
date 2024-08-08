@@ -74,7 +74,7 @@ fn main() {
         &options.output,
         true,
         &Runtime::base(),
-        false,
+        true,
         false,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
