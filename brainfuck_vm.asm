@@ -19,15 +19,17 @@
 /// The `.` (print) instruction treats its input as the ASCII code of a character,
 /// and prints that character.
 
+use std::machines::range::Byte2;
 use std::machines::memory::Memory;
 
 // This is a hard upper bound for the trace length of the proven programs.
-// We assume the Brainfuck program will run in less than 2**18 rows.
+// We assume the Brainfuck program will run in less than 2**16 rows.
 // It can be increased if needed.
 // The main lower bound consideration is the memory machine:
 // The addresses set in __runtime_start cannot be larger than the degree below.
 machine Brainfuck with degree: 2**16 {
-	Memory mem;
+	Byte2 byte2;
+	Memory mem(byte2);
 
 	reg pc[@pc];
 	reg X[<=];
@@ -58,8 +60,11 @@ machine Brainfuck with degree: 2**16 {
 
 	// ============== memory instructions ==============
 	col fixed STEP(i) { i };
-	instr mload X -> Y ~ mem.mload X, STEP -> Y;
-	instr mstore X, Y -> ~ mem.mstore X, STEP, Y ->;
+	instr mload X -> Y
+		link ~> Y = mem.mload(X, STEP);
+
+	instr mstore X, Y
+		link ~> mem.mstore(X, STEP, Y);
 
 	// ============== iszero check for X =======================
 	let XIsZero = std::utils::is_zero(X);

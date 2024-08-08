@@ -75,6 +75,7 @@ fn main() {
         true,
         &Runtime::base(),
         false,
+        false,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();
@@ -94,13 +95,14 @@ fn main() {
 
         let program = pipeline.compute_analyzed_asm().unwrap().clone();
         let initial_memory = powdr::riscv::continuations::load_initial_memory(&program);
-        let (trace, _mem) = powdr::riscv_executor::execute_ast::<F>(
+        let (trace, _mem, _reg_mem) = powdr::riscv_executor::execute_ast::<F>(
             &program,
             initial_memory,
             pipeline.data_callback().unwrap(),
             &default_input(&[]),
             usize::MAX,
             powdr::riscv_executor::ExecMode::Fast,
+            None,
         );
 
         let duration = start.elapsed();
@@ -119,7 +121,7 @@ fn main() {
     }
 
     if options.proof {
-        let mut pipeline = pipeline.with_backend(BackendType::EStarkPolygon, None);
+        let mut pipeline = pipeline.with_backend(BackendType::Plonky3Composite, None);
         log::info!("Computing proof...");
         let start = Instant::now();
 
