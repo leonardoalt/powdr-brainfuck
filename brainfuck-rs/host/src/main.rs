@@ -4,6 +4,7 @@ use powdr::riscv::{compile_rust, Runtime};
 use powdr::GoldilocksField;
 use powdr::Pipeline;
 
+use std::collections::VecDeque;
 use std::fs;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -36,7 +37,22 @@ struct Options {
 
 fn read_file_and_convert(path: PathBuf) -> Vec<u32> {
     let content = fs::read_to_string(path).unwrap();
-    content.bytes().map(|b| b as u32).collect()
+    let valid_chars = "><+-.,[]";
+    content
+        .chars()
+        .filter(|c| valid_chars.contains(*c))
+        .map(|b| b as u32)
+        .collect()
+}
+
+fn read_inputs(path: PathBuf) -> VecDeque<i64> {
+    let content = fs::read_to_string(path).unwrap();
+    content
+        .split(',')
+        .map(|x| x.trim())
+        .filter(|x| !x.is_empty())
+        .map(|x| x.parse::<i64>().unwrap())
+        .collect()
 }
 
 type F = GoldilocksField;
@@ -53,14 +69,15 @@ fn main() {
     program.push(0);
 
     let inputs = match options.inputs {
-        Some(inputs) => read_file_and_convert(inputs),
-        None => vec![],
+        Some(inputs) => read_inputs(inputs),
+        None => vec![].into(),
     };
 
     if options.execute {
         log::info!("Running native brainfuck interpreter...");
-        let output =
-            String::from_utf8(brainfuck_interpreter::run(program.clone(), inputs.clone())).unwrap();
+        let (instr_count, output) = brainfuck_interpreter::run(program.clone(), inputs.clone());
+        let output = String::from_utf8(output).unwrap();
+        log::info!("Execution took {instr_count} BF cycles.");
         println!("{output}");
     }
 
@@ -76,6 +93,7 @@ fn main() {
         &Runtime::base(),
         true,
         false,
+        None,
     )
     .ok_or_else(|| vec!["could not compile rust".to_string()])
     .unwrap();

@@ -94,6 +94,7 @@ machine Brainfuck {
 			CNT <=X= CNT + 1;
 			tmp1 <== jump(read_input_loop);
 		end_read_input:
+			mstore CNT + 10000 /*INPUT_START*/, -1;
 			A <== jump_dyn(ret_addr);
 		// ==== end of helper routine
 
@@ -197,6 +198,7 @@ machine Brainfuck {
 		// ==== helper routine for `,`
 		routine_read:
 			A <== mload(in_ptr);
+      in_ptr <=X= in_ptr + 1;
 			mstore dp, A;
 			A <== jump(end_run_op);
 		// ==== end of `,` helper routine
