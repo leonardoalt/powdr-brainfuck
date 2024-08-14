@@ -22,12 +22,7 @@
 use std::machines::range::Byte2;
 use std::machines::memory::Memory;
 
-// This is a hard upper bound for the trace length of the proven programs.
-// We assume the Brainfuck program will run in less than 2**16 rows.
-// It can be increased if needed.
-// The main lower bound consideration is the memory machine:
-// The addresses set in __runtime_start cannot be larger than the degree below.
-machine Brainfuck with degree: 2**16 {
+machine Brainfuck {
 	Byte2 byte2;
 	Memory mem(byte2);
 
