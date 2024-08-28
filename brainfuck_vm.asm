@@ -76,21 +76,21 @@ machine Brainfuck {
 		// ==== helper routine to read the program and inputs from prover into memory
 		read_program_and_input:
 			// read the length of the program
-			A <=X= ${ std::prover::Query::Input(0) };
+			A <=X= ${ std::prelude::Query::Input(0) };
 			CNT <=X= 0;
 		read_program_loop:
 			branch_if_zero A - CNT, end_read_program;
-			mstore CNT + 0 /*PROGRAM_START*/, ${ std::prover::Query::Input(std::convert::int(std::prover::eval(CNT)) + 1) };
+			mstore CNT + 0 /*PROGRAM_START*/, ${ std::prelude::Query::Input(std::convert::int(std::prover::eval(CNT)) + 1) };
 			CNT <=X= CNT + 1;
 			tmp1 <== jump(read_program_loop);
 		end_read_program:
 		read_input:
 			CNT <=X= 0;
 			// read input length
-			in_ptr <=X= ${ std::prover::Query::Input(std::convert::int(std::prover::eval(A)) + 1) };
+			in_ptr <=X= ${ std::prelude::Query::Input(std::convert::int(std::prover::eval(A)) + 1) };
 		read_input_loop:
 			branch_if_zero in_ptr - CNT, end_read_input;
-			mstore CNT + 10000 /*INPUT_START*/, ${ std::prover::Query::Input(std::convert::int(std::prover::eval(CNT) + std::prover::eval(A)) + 2) };
+			mstore CNT + 10000 /*INPUT_START*/, ${ std::prelude::Query::Input(std::convert::int(std::prover::eval(CNT) + std::prover::eval(A)) + 2) };
 			CNT <=X= CNT + 1;
 			tmp1 <== jump(read_input_loop);
 		end_read_input:
@@ -206,7 +206,7 @@ machine Brainfuck {
 		// ==== helper routine for `.`
 		routine_write:
 			A <== mload(dp);
-			A <=X= ${ std::prover::Query::Output(1, std::convert::int(std::prover::eval(A))) };
+			A <=X= ${ std::prelude::Query::Output(1, std::convert::int(std::prover::eval(A))) };
 			A <== jump(end_run_op);
 		// ==== end of `.` helper routine
 

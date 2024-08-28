@@ -19,14 +19,14 @@ def compile(program):
             powdr_asm.append("dec_cell;")
         elif instr == ",":
             powdr_asm.append(
-                "data <=X= ${ std::prover::Query::Input(std::convert::int(std::prover::eval(in_ptr))) };"
+                "data <=X= ${ std::prelude::Query::Input(std::convert::int(std::prover::eval(in_ptr))) };"
             )
             powdr_asm.append("mstore data;")
             powdr_asm.append("in_ptr <=X= in_ptr + 1;")
         elif instr == ".":
             powdr_asm.append("data <== mload();")
             powdr_asm.append(
-                "data <=X= ${ std::prover::Query::Output(1, std::convert::int(std::prover::eval(data))) };"
+                "data <=X= ${ std::prelude::Query::Output(1, std::convert::int(std::prover::eval(data))) };"
             )
         elif instr == "[":
             label_true = f"loop_true_{loop_counter}"
